@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>動漫周邊店｜SQL 查詢練習室</title>
+<style>
+:root{color-scheme:light;--bg:#f7f5f8;--panel:#fff;--ink:#28243a;--muted:#706b7d;--line:#e6e0ea;--accent:#bd3e78;--soft:#f8eaf1;--good:#18794e;--bad:#b42318;--code:#211d2b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
+header{background:linear-gradient(120deg,#542b58,#bd3e78);color:white;padding:28px 20px}
+header .wrap,main{max-width:1100px;margin:auto}h1{margin:0;font-size:clamp(25px,4vw,36px)}header p{margin:6px 0 0;color:#f7eaf1}
+main{padding:22px 16px 48px}.notice{background:#fff7e8;border:1px solid #f2d49b;padding:12px 14px;border-radius:12px;margin-bottom:18px;color:#674b1c}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:18px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 3px 14px #24142a08}
+h2{font-size:18px;margin:0 0 12px}h3{font-size:15px;margin:16px 0 8px}.side section+section{margin-top:16px}
+button,select{font:inherit}button{border:1px solid var(--line);background:white;color:var(--ink);padding:8px 12px;border-radius:9px;cursor:pointer}
+button:hover{border-color:var(--accent);background:var(--soft)}button.primary{background:var(--accent);border-color:var(--accent);color:white;font-weight:700}button.primary:hover{filter:brightness(.95)}button:disabled{opacity:.5;cursor:not-allowed}
+.preset{display:block;width:100%;text-align:left;margin:7px 0}.muted{color:var(--muted);font-size:13px}
+.schema{font-size:14px;border-top:1px solid var(--line);padding:9px 0}.schema b{color:var(--accent)}.schema small{display:block;color:var(--muted)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+textarea{width:100%;min-height:190px;resize:vertical;background:var(--code);color:#f5edf8;border:1px solid #453b50;border-radius:11px;padding:14px;font:14px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2}
+.status{padding:10px 12px;border-radius:9px;margin:12px 0;font-size:14px}.status.good{background:#e8f6ee;color:var(--good)}.status.bad{background:#fff0ef;color:var(--bad)}.status.info{background:#f1edf5;color:#5f5369}
+.result{overflow:auto;margin:8px 0 16px;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px;background:white}th,td{padding:9px 11px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{background:#f4eff5;color:#51465b;position:sticky;top:0}tr:last-child td{border-bottom:0}.empty{padding:15px;color:var(--muted)}
+.stats{display:flex;gap:10px;flex-wrap:wrap}.stat{background:#f6f1f6;border-radius:9px;padding:8px 12px;font-size:13px}.stat strong{font-size:18px;display:block}
+footer{max-width:1100px;margin:20px auto 0;padding:0 16px 28px;color:var(--muted);font-size:13px}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.side{order:2}.work{order:1}header{padding:22px 16px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>動漫周邊店｜SQL 查詢練習室</h1><p>練習 SELECT、WHERE、ORDER BY、JOIN，也可以試著新增、修改和刪除資料。</p></div></header>
+<main>
+<div class="notice"><b>使用提醒：</b>這個練習室在你的瀏覽器中執行 SQLite。資料不會上傳到伺服器；重新整理或按「重設資料庫」會恢復範例資料。第一次開啟需要網路載入 SQLite 程式庫。</div>
+<div class="layout">
+<aside class="side">
+ <section class="panel"><h2>資料表結構</h2>
+  <div class="schema"><b>商品</b><small>商品編號（PK）、商品名稱、分類、價格、庫存</small></div>
+  <div class="schema"><b>顧客</b><small>顧客編號（PK）、顧客姓名</small></div>
+  <div class="schema"><b>訂單</b><small>訂單編號（PK）、顧客編號（FK）、商品編號（FK）、數量</small></div>
+  <p class="muted">PK＝主鍵；FK＝外來鍵</p>
+ </section>
+ <section class="panel"><h2>範例題目</h2>
+  <button class="preset" data-query="SELECT * FROM 商品;">① 查詢所有商品</button>
+  <button class="preset" data-query="SELECT 商品名稱, 價格 FROM 商品 WHERE 價格 > 100 ORDER BY 價格 DESC;">② 查詢價格超過 100 元</button>
+  <button class="preset" data-query="SELECT 商品名稱, 庫存 FROM 商品 WHERE 庫存 < 10;">③ 查詢庫存少於 10 件</button>
+  <button class="preset" data-query="SELECT 分類, COUNT(*) AS 商品種類 FROM 商品 GROUP BY 分類;">④ 統計各分類商品數量</button>
+  <button class="preset" data-query="SELECT 顧客.顧客姓名, 商品.商品名稱, 訂單.數量 FROM 訂單 JOIN 顧客 ON 訂單.顧客編號 = 顧客.顧客編號 JOIN 商品 ON 訂單.商品編號 = 商品.商品編號;">⑤ 查詢誰買了什麼</button>
+  <button class="preset" data-query="SELECT 商品名稱, 價格, 庫存 FROM 商品 ORDER BY 庫存 ASC LIMIT 3;">⑥ 找出庫存最少的 3 種商品</button>
+ </section>
+</aside>
+<section class="work panel">
+ <h2>SQL 編輯區</h2>
+ <p class="muted">在下方輸入 SQL，按「執行 SQL」；也可以先點左側範例題目。</p>
+ <textarea id="sql" spellcheck="false" aria-label="SQL 編輯器">SELECT 商品名稱 AS 商品, 價格 AS 單價
+FROM 商品
+WHERE 價格 > 100
+ORDER BY 價格 DESC;</textarea>
+ <div class="toolbar">
+  <button class="primary" id="run" disabled>載入中…</button>
+  <button id="reset">重設資料庫</button>
+  <button id="clear">清空編輯區</button>
+ </div>
+ <div id="engine" class="status info">正在載入 SQLite…</div>
+ <div class="stats" id="stats"></div>
+ <h3>查詢結果</h3><div id="output" class="result"><div class="empty">SQLite 載入完成後，按「執行 SQL」查看結果。</div></div>
+ <h3>資料表目前內容</h3><p class="muted">執行 INSERT、UPDATE 或 DELETE 後，這裡會同步更新。</p>
+ <div id="tables"></div>
+</section>
+</div>
+</main>
+<footer>SQL.js / SQLite · 僅供課堂練習。支援一般 SQLite 查詢及資料異動指令。</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+<script>
+const seed = `
+CREATE TABLE 商品 (商品編號 INTEGER PRIMARY KEY, 商品名稱 TEXT NOT NULL, 分類 TEXT NOT NULL, 價格 INTEGER NOT NULL CHECK(價格>=0), 庫存 INTEGER NOT NULL CHECK(庫存>=0));
+CREATE TABLE 顧客 (顧客編號 INTEGER PRIMARY KEY, 顧客姓名 TEXT NOT NULL);
+CREATE TABLE 訂單 (訂單編號 INTEGER PRIMARY KEY, 顧客編號 INTEGER NOT NULL REFERENCES 顧客(顧客編號), 商品編號 INTEGER NOT NULL REFERENCES 商品(商品編號), 數量 INTEGER NOT NULL CHECK(數量>0));
+INSERT INTO 商品 VALUES
+(1,'影山飛雄壓克力立牌','排球少年',180,12),
+(2,'日向翔陽徽章','排球少年',80,35),
+(3,'轟焦凍生日立牌','我的英雄學院',520,4),
+(4,'爆豪勝己吊飾','我的英雄學院',150,8),
+(5,'小八玩偶','吉伊卡哇',390,6),
+(6,'芙莉蓮明信片','葬送的芙莉蓮',60,50),
+(7,'宮侑鑰匙圈','排球少年',120,18);
+INSERT INTO 顧客 VALUES (1,'小明'),(2,'小華'),(3,'小美');
+INSERT INTO 訂單 VALUES (1,1,1,1),(2,1,2,2),(3,2,3,1),(4,3,5,1);
+`;
+let SQL, db;
+const $ = id => document.getElementById(id);
+function esc(v){return String(v??'NULL').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function tableHTML(columns, values){
+ if(!columns || !columns.length) return '<div class="empty">這個指令沒有回傳資料表。</div>';
+ if(!values.length) return '<div class="empty">查詢完成，但沒有符合條件的資料。</div>';
+ return '<table><thead><tr>'+columns.map(c=>'<th>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'+
+ values.map(row=>'<tr>'+row.map(v=>'<td>'+esc(v)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
+}
+function renderTables(){
+ const names=['商品','顧客','訂單'];
+ $('tables').innerHTML=names.map(name=>{
+  const r=db.exec('SELECT * FROM "'+name+'"')[0];
+  return '<h3>'+name+'（'+(r?r.values.length:0)+' 筆）</h3><div class="result">'+(r?tableHTML(r.columns,r.values):'')+'</div>';
+ }).join('');
+}
+function resetDB(){
+ if(db) db.close();
+ db=new SQL.Database(); db.run('PRAGMA foreign_keys = ON;'); db.run(seed);
+ renderTables(); $('stats').innerHTML=''; $('output').innerHTML='<div class="empty">資料庫已重設。按「執行 SQL」開始查詢。</div>';
+ $('engine').className='status good'; $('engine').textContent='SQLite 已就緒，可以執行 SQL。';
+}
+function runSQL(){
+ const query=$('sql').value.trim();
+ if(!query){$('output').innerHTML='<div class="empty">請先輸入 SQL 指令。</div>';return;}
+ try{
+  const start=performance.now();
+  const results=db.exec(query);
+  const elapsed=Math.round(performance.now()-start);
+  const changed=db.getRowsModified();
+  if(results.length){
+   $('output').innerHTML=results.map((r,i)=>'<div style="padding:10px 12px 0"><b>結果 '+(i+1)+'：</b> '+r.values.length+' 筆</div><div class="result">'+tableHTML(r.columns,r.values)+'</div>').join('');
+   const total=results.reduce((n,r)=>n+r.values.length,0);
+   $('stats').innerHTML='<div class="stat"><strong>'+total+'</strong>回傳資料列</div><div class="stat"><strong>'+elapsed+' ms</strong>執行時間</div>';
+  }else{
+   $('output').innerHTML='<div class="status good">指令執行成功，沒有回傳查詢資料。資料異動 '+changed+' 列。</div>';
+   $('stats').innerHTML='<div class="stat"><strong>'+changed+'</strong>異動資料列</div><div class="stat"><strong>'+elapsed+' ms</strong>執行時間</div>';
+  }
+  renderTables();
+ }catch(e){
+  $('output').innerHTML='<div class="status bad"><b>SQL 執行失敗</b><br>'+esc(e.message)+'</div>';
+  $('stats').innerHTML='';
+ }
+}
+$('run').addEventListener('click',runSQL);
+$('reset').addEventListener('click',()=>{resetDB();$('sql').value='SELECT * FROM 商品;';});
+$('clear').addEventListener('click',()=>{$('sql').value='';$('sql').focus();});
+document.querySelectorAll('.preset').forEach(btn=>btn.addEventListener('click',()=>{$('sql').value=btn.dataset.query;$('sql').focus();}));
+$('sql').addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runSQL();}});
+initSqlJs({locateFile:file=>'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/'+file}).then(SQLLib=>{
+ SQL=SQLLib;resetDB();$('run').disabled=false;$('run').textContent='執行 SQL（Ctrl＋Enter）';
+}).catch(()=>{$('engine').className='status bad';$('engine').textContent='SQLite 載入失敗。請確認網路連線後重新整理頁面。';$('run').textContent='尚未載入';});
+</script>
+</body>
+</html>
